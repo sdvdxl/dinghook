@@ -21,7 +21,7 @@ type Message struct {
 type Link struct {
 	Content    string `json:"text" validate:"required"`       // 要发送的消息， 必填
 	Title      string `json:"title" validate:"required"`      // 标题， 必填
-	MessageURL string `json:"messageUrl" validate:"required"` // 点击消息跳转的URL 必填
+	ContentURL string `json:"messageUrl" validate:"required"` // 点击消息跳转的URL 必填
 	PictureURL string `json:"picUrl"`                         // 图片 url
 }
 

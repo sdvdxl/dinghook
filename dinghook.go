@@ -6,6 +6,11 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
+
+	"container/list"
+
+	"sync"
 
 	"gopkg.in/go-playground/validator.v9"
 )
@@ -30,6 +35,88 @@ type Result struct {
 // Ding 钉钉消息发送实体
 type Ding struct {
 	AccessToken string // token
+}
+
+// DingQueue 用queue 方式发送消息
+// 会发送 markdown 类型消息
+type DingQueue struct {
+	AccessToken string
+	ding        Ding
+	Interval    uint       // 发送间隔s，最小为1
+	Limit       uint       // 每次发送消息限制，0 无限制，到达时间则发送队列所有消息，大于1则到时间发送最大Limit数量的消息
+	Title       string     // 摘要
+	messages    *list.List // 消息队列
+	lock        sync.Mutex
+}
+
+// Init 初始化 DingQueue
+func (ding *DingQueue) Init() {
+	ding.ding.AccessToken = ding.AccessToken
+	ding.messages = list.New()
+	if ding.Interval == 0 {
+		ding.Interval = 1
+	}
+}
+
+// Push push 消息到队列
+func (ding *DingQueue) Push(message string) {
+	log.Println("rec message: ", message)
+	defer ding.lock.Unlock()
+	ding.lock.Lock()
+	ding.messages.PushBack(message)
+}
+
+// Start 开始工作
+func (ding *DingQueue) Start() {
+	sendQueueMessage(ding)
+	timer := time.NewTicker(time.Second * time.Duration(ding.Interval))
+	for {
+		select {
+		case <-timer.C:
+			log.Println("checking message queue")
+			sendQueueMessage(ding)
+		}
+	}
+}
+
+func sendQueueMessage(ding *DingQueue) {
+	defer ding.lock.Unlock()
+	ding.lock.Lock()
+	log.Println("queue size: ", ding.messages.Len())
+	msg := ""
+	if ding.Limit == 0 {
+		for {
+			m := ding.messages.Front()
+			if m == nil {
+				break
+			}
+			ding.messages.Remove(m)
+			msg += m.Value.(string) + "\n\n"
+		}
+	} else {
+	label:
+		for i := uint(0); i < ding.Limit; i++ {
+			for {
+				m := ding.messages.Front()
+
+				if m == nil {
+					break label
+				}
+				ding.messages.Remove(m)
+				msg += m.Value.(string) + "\n"
+			}
+		}
+	}
+
+	if msg != "" {
+		log.Println("sending messages")
+		go func() {
+			r := ding.ding.Send(Markdown{Title: ding.Title, Content: msg})
+			if !r.Success {
+				log.Println("err:" + r.ErrMsg)
+			}
+		}()
+	}
 }
 
 // Send 发送消息
@@ -92,7 +179,7 @@ func convertMessage(m Message) map[string]interface{} {
 func convertLink(m Link) map[string]interface{} {
 	var paramsMap = make(map[string]interface{})
 	paramsMap["msgtype"] = "link"
-	paramsMap["link"] = map[string]string{"text": m.Content, "title": m.Title, "picUrl": m.PictureURL, "messageUrl": m.MessageURL}
+	paramsMap["link"] = map[string]string{"text": m.Content, "title": m.Title, "picUrl": m.PictureURL, "messageUrl": m.ContentURL}
 	return paramsMap
 }
 
