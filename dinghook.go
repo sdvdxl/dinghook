@@ -67,7 +67,7 @@ func (ding *DingQueue) Push(message string) {
 }
 
 // PushMessage push 消息到队列
-func (ding *DingQueue) PushMessage(m message) {
+func (ding *DingQueue) PushMessage(m SimpleMessage) {
 	log.Println("rec message: ", m)
 	defer ding.lock.Unlock()
 	ding.lock.Lock()
@@ -101,10 +101,10 @@ func sendQueueMessage(ding *DingQueue) {
 			}
 			ding.messages.Remove(m)
 			switch m.Value.(type) {
-			case message:
-				v := m.Value.(message)
-				msg += v.content + "\n\n"
-				title += v.title
+			case SimpleMessage:
+				v := m.Value.(SimpleMessage)
+				msg += v.Content + "\n\n"
+				title += v.Title
 			case string:
 				msg += m.Value.(string) + "\n\n"
 			}
@@ -121,10 +121,10 @@ func sendQueueMessage(ding *DingQueue) {
 				}
 				ding.messages.Remove(m)
 				switch m.Value.(type) {
-				case message:
-					v := m.Value.(message)
-					msg += v.content + "\n\n"
-					title += v.title
+				case SimpleMessage:
+					v := m.Value.(SimpleMessage)
+					msg += v.Content + "\n\n"
+					title += v.Title
 				case string:
 					msg += m.Value.(string) + "\n\n"
 				}
