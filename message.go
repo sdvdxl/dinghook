@@ -30,3 +30,8 @@ type Markdown struct {
 	Content string `json:"text" validate:"required"`  // 要发送的消息， 必填
 	Title   string `json:"title" validate:"required"` // 标题， 必填
 }
+
+type message struct {
+	content string
+	title   string
+}

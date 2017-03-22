@@ -66,6 +66,14 @@ func (ding *DingQueue) Push(message string) {
 	ding.messages.PushBack(message)
 }
 
+// PushMessage push 消息到队列
+func (ding *DingQueue) PushMessage(m message) {
+	log.Println("rec message: ", m)
+	defer ding.lock.Unlock()
+	ding.lock.Lock()
+	ding.messages.PushBack(m)
+}
+
 // Start 开始工作
 func (ding *DingQueue) Start() {
 	sendQueueMessage(ding)
@@ -83,6 +91,7 @@ func sendQueueMessage(ding *DingQueue) {
 	defer ding.lock.Unlock()
 	ding.lock.Lock()
 	log.Println("queue size: ", ding.messages.Len())
+	title := ding.Title
 	msg := ""
 	if ding.Limit == 0 {
 		for {
@@ -91,7 +100,15 @@ func sendQueueMessage(ding *DingQueue) {
 				break
 			}
 			ding.messages.Remove(m)
-			msg += m.Value.(string) + "\n\n"
+			switch m.Value.(type) {
+			case message:
+				v := m.Value.(message)
+				msg += v.content + "\n\n"
+				title += v.title
+			case string:
+				msg += m.Value.(string) + "\n\n"
+			}
+
 		}
 	} else {
 	label:
@@ -103,7 +120,14 @@ func sendQueueMessage(ding *DingQueue) {
 					break label
 				}
 				ding.messages.Remove(m)
-				msg += m.Value.(string) + "\n"
+				switch m.Value.(type) {
+				case message:
+					v := m.Value.(message)
+					msg += v.content + "\n\n"
+					title += v.title
+				case string:
+					msg += m.Value.(string) + "\n\n"
+				}
 			}
 		}
 	}
@@ -111,7 +135,7 @@ func sendQueueMessage(ding *DingQueue) {
 	if msg != "" {
 		log.Println("sending messages")
 		go func() {
-			r := ding.ding.Send(Markdown{Title: ding.Title, Content: msg})
+			r := ding.ding.Send(Markdown{Title: title, Content: msg})
 			if !r.Success {
 				log.Println("err:" + r.ErrMsg)
 			}
