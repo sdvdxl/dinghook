@@ -37,6 +37,11 @@ type Ding struct {
 	AccessToken string // token
 }
 
+// NewDing new 一个没有队列的ding
+func NewDing(token string) Ding {
+	return Ding{AccessToken: token}
+}
+
 // DingQueue 用queue 方式发送消息
 // 会发送 markdown 类型消息
 type DingQueue struct {
@@ -47,6 +52,17 @@ type DingQueue struct {
 	Title       string     // 摘要
 	messages    *list.List // 消息队列
 	lock        sync.Mutex
+}
+
+// NewQueue 创建一个队列
+func NewQueue(token, title string, interval, limit uint) *DingQueue {
+	dingQueue := &DingQueue{
+		AccessToken: token,
+		Title:       title,
+		Interval:    interval,
+		Limit:       limit}
+	dingQueue.Init()
+	return dingQueue
 }
 
 // Init 初始化 DingQueue
@@ -60,10 +76,20 @@ func (ding *DingQueue) Init() {
 
 // Push push 消息到队列
 func (ding *DingQueue) Push(message string) {
-	log.Println("rec message: ", message)
 	defer ding.lock.Unlock()
 	ding.lock.Lock()
-	ding.messages.PushBack(message)
+	ding.messages.PushBack(SimpleMessage{Title: ding.Title, Content: message})
+}
+
+// PushWithTitle push 消息到队列
+func (ding *DingQueue) PushWithTitle(title, message string) {
+	defer ding.lock.Unlock()
+	ding.lock.Lock()
+	if title == "" {
+		title = ding.Title
+	}
+
+	ding.messages.PushBack(SimpleMessage{Title: title, Content: message})
 }
 
 // PushMessage push 消息到队列
@@ -81,7 +107,6 @@ func (ding *DingQueue) Start() {
 	for {
 		select {
 		case <-timer.C:
-			log.Println("checking message queue")
 			sendQueueMessage(ding)
 		}
 	}
@@ -90,7 +115,6 @@ func (ding *DingQueue) Start() {
 func sendQueueMessage(ding *DingQueue) {
 	defer ding.lock.Unlock()
 	ding.lock.Lock()
-	log.Println("queue size: ", ding.messages.Len())
 	title := ding.Title
 	msg := ""
 	if ding.Limit == 0 {
@@ -104,7 +128,11 @@ func sendQueueMessage(ding *DingQueue) {
 			case SimpleMessage:
 				v := m.Value.(SimpleMessage)
 				msg += v.Content + "\n\n"
-				title += v.Title
+
+				if title != v.Title {
+					title += (" " + v.Title)
+				}
+
 			case string:
 				msg += m.Value.(string) + "\n\n"
 			}
@@ -133,7 +161,6 @@ func sendQueueMessage(ding *DingQueue) {
 	}
 
 	if msg != "" {
-		log.Println("sending messages")
 		go func() {
 			r := ding.ding.Send(Markdown{Title: title, Content: msg})
 			if !r.Success {
@@ -141,6 +168,21 @@ func sendQueueMessage(ding *DingQueue) {
 			}
 		}()
 	}
+}
+
+// SendMessage 发送普通文本消息
+func (ding Ding) SendMessage(message Message) Result {
+	return ding.Send(message)
+}
+
+// SendLink 发送link类型消息
+func (ding Ding) SendLink(message Link) Result {
+	return ding.Send(message)
+}
+
+// SendMarkdown 发送markdown格式消息
+func (ding Ding) SendMarkdown(message Markdown) Result {
+	return ding.Send(message)
 }
 
 // Send 发送消息
