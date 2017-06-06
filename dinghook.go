@@ -32,6 +32,12 @@ type Result struct {
 	ErrCode int `json:"errcode"`
 }
 
+// Group 钉钉组
+type Group struct {
+	Name  string `json:"name"`
+	Token string `json:"token"`
+}
+
 // Ding 钉钉消息发送实体
 type Ding struct {
 	AccessToken string // token
