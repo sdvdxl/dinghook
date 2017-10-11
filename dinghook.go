@@ -100,7 +100,6 @@ func (ding *DingQueue) PushWithTitle(title, message string) {
 
 // PushMessage push 消息到队列
 func (ding *DingQueue) PushMessage(m SimpleMessage) {
-	log.Println("rec message: ", m)
 	defer ding.lock.Unlock()
 	ding.lock.Lock()
 	ding.messages.PushBack(m)
@@ -135,10 +134,6 @@ func sendQueueMessage(ding *DingQueue) {
 				v := m.Value.(SimpleMessage)
 				msg += v.Content + "\n\n"
 
-				if title != v.Title {
-					title += (" " + v.Title)
-				}
-
 			case string:
 				msg += m.Value.(string) + "\n\n"
 			}
@@ -158,7 +153,6 @@ func sendQueueMessage(ding *DingQueue) {
 				case SimpleMessage:
 					v := m.Value.(SimpleMessage)
 					msg += v.Content + "\n\n"
-					title += v.Title
 				case string:
 					msg += m.Value.(string) + "\n\n"
 				}
@@ -171,6 +165,7 @@ func sendQueueMessage(ding *DingQueue) {
 			r := ding.ding.Send(Markdown{Title: title, Content: msg})
 			if !r.Success {
 				log.Println("err:" + r.ErrMsg)
+				NewDing(ding.ding.AccessToken).Send("消息太长，请通过其他途径查看，比如邮件")
 			}
 		}()
 	}
