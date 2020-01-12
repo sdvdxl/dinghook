@@ -18,10 +18,15 @@ package dinghook
 const (
 	// MsgTypeText text 类型
 	MsgTypeText = "text"
+
 	// MsgTypeLink link 类型
 	MsgTypeLink = "link"
+
 	// MsgTypeMarkdown markdown 类型
 	MsgTypeMarkdown = "markdown"
+
+	// MsgTypeActionCard actionCard 类型
+	MsgTypeActionCard = "actionCard"
 )
 
 // Message 普通消息
@@ -43,6 +48,30 @@ type Link struct {
 type Markdown struct {
 	Content string `json:"text" validate:"required"`  // 要发送的消息， 必填
 	Title   string `json:"title" validate:"required"` // 标题， 必填
+}
+
+// OverallActionCard 整体跳转 类型
+type OverallActionCard struct {
+	Content     string `json:"text" validate:"required"`        // 要发送的消息， 必填
+	Title       string `json:"title" validate:"required"`       // 标题， 必填
+	HideAvatar  bool   `json:"hideAvatar"`                      // false-正常发消息者头像，true-隐藏发消息者头像
+	ButtonTitle string `json:"singleTitle" validate:"required"` // 单个按钮的文案
+	ButtonURL   string `json:"singleURL" validate:"required"`   // 点击按钮跳转url
+}
+
+// IndependentActionCard 独立跳转类型
+type IndependentActionCard struct {
+	Content          string                        `json:"text" validate:"required"`  // 要发送的消息， 必填
+	Title            string                        `json:"title" validate:"required"` // 标题， 必填
+	HideAvatar       bool                          `json:"hideAvatar"`                // false-正常发消息者头像，true-隐藏发消息者头像
+	ButtonHorizontal bool                          `json:"btnOrientation"`            //false-按钮竖直排列，true-按钮横向排列
+	Btns             []IndependentActionCardButton `json:"btns" validate:"required"`
+}
+
+// IndependentActionCardButton 按钮信息
+type IndependentActionCardButton struct {
+	ButtonTitle string `json:"title" validate:"required"`     // 单个按钮的文案
+	ButtonURL   string `json:"actionURL" validate:"required"` // 点击按钮跳转url
 }
 
 // SimpleMessage push message

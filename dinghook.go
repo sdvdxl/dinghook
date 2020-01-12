@@ -218,17 +218,6 @@ func (ding Ding) Send(message interface{}) Result {
 		return Result{ErrMsg: "access token is required"}
 	}
 
-	switch message.(type) {
-	case *Message:
-	case Message:
-	case Link:
-	case *Link:
-	case Markdown:
-	case *Markdown:
-	default:
-		return Result{ErrMsg: "not support message type"}
-	}
-
 	var err error
 
 	// 检查必填项目
@@ -249,6 +238,14 @@ func (ding Ding) Send(message interface{}) Result {
 		paramsMap = convertMarkdown(m)
 	} else if m, ok := message.(*Markdown); ok {
 		paramsMap = convertMarkdown(*m)
+	} else if m, ok := message.(OverallActionCard); ok {
+		paramsMap = convertOverallActionCard(m)
+	} else if m, ok := message.(*OverallActionCard); ok {
+		paramsMap = convertOverallActionCard(*m)
+	} else if m, ok := message.(IndependentActionCard); ok {
+		paramsMap = convertIndependentActionCard(m)
+	} else if m, ok := message.(*IndependentActionCard); ok {
+		paramsMap = convertIndependentActionCard(*m)
 	} else {
 		return Result{ErrMsg: "not support message type"}
 	}
@@ -285,6 +282,46 @@ func convertMarkdown(m Markdown) map[string]interface{} {
 	var paramsMap = make(map[string]interface{})
 	paramsMap["msgtype"] = "markdown"
 	paramsMap["markdown"] = map[string]string{"text": m.Content, "title": m.Title}
+	return paramsMap
+}
+
+func convertOverallActionCard(m OverallActionCard) map[string]interface{} {
+	var paramsMap = make(map[string]interface{})
+	paramsMap["msgtype"] = "actionCard"
+
+	hideAvatar := "0"
+	if m.HideAvatar {
+		hideAvatar = "1"
+	}
+	paramsMap["actionCard"] = map[string]string{"text": m.Content, "title": m.Title,
+		"singleTitle": m.ButtonTitle, "singleURL": m.ButtonURL,
+		"btnOrientation": "0", "hideAvatar": hideAvatar}
+	return paramsMap
+}
+
+func convertIndependentActionCard(m IndependentActionCard) map[string]interface{} {
+	var paramsMap = make(map[string]interface{})
+	paramsMap["msgtype"] = "actionCard"
+
+	hideAvatar := "0"
+	if m.HideAvatar {
+		hideAvatar = "1"
+	}
+
+	btnOrientation := "0"
+	if m.ButtonHorizontal {
+		btnOrientation = "1"
+	}
+
+	btns := make([]map[string]interface{}, 0, len(m.Btns))
+
+	for _, v := range m.Btns {
+		btns = append(btns, map[string]interface{}{"title": v.ButtonTitle, "actionURL": v.ButtonURL})
+	}
+
+	paramsMap["actionCard"] = map[string]interface{}{"text": m.Content, "title": m.Title,
+		"btns":           btns,
+		"btnOrientation": btnOrientation, "hideAvatar": hideAvatar}
 	return paramsMap
 }
 
