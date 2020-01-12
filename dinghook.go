@@ -19,14 +19,17 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
 	"container/list"
-
-	"sync"
-
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
 	"gopkg.in/go-playground/validator.v9"
+	"sync"
 )
 
 const (
@@ -55,6 +58,15 @@ type Group struct {
 // Ding 钉钉消息发送实体
 type Ding struct {
 	AccessToken string // token
+	SignToken   string // 加签token，可选，如果填写则使用加签方式发送，否则需要自己使用关键词或者ip方式
+}
+
+func calcSign(timestamp int64, signToken string) string {
+	stringToSign := fmt.Sprintf("%d\n%s", timestamp, signToken)
+	h := hmac.New(sha256.New, []byte(signToken))
+	h.Write([]byte(stringToSign))
+	sumValue := h.Sum(nil)
+	return url.QueryEscape(base64.StdEncoding.EncodeToString(sumValue))
 }
 
 // NewDing new 一个没有队列的ding
@@ -246,7 +258,12 @@ func (ding Ding) Send(message interface{}) Result {
 		return Result{ErrMsg: "marshal message error:" + err.Error()}
 	}
 
-	return postMessage(DingAPIURL+ding.AccessToken, string(buf))
+	dingUrl := DingAPIURL + ding.AccessToken
+	if ding.SignToken != "" {
+		timestamp := time.Now().UnixNano() / 1000 / 1000
+		dingUrl += fmt.Sprintf("&timestamp=%d&sign=%s", timestamp, calcSign(timestamp, ding.SignToken))
+	}
+	return postMessage(dingUrl, string(buf))
 }
 
 func convertMessage(m Message) map[string]interface{} {

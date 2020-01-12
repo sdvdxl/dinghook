@@ -71,3 +71,7 @@ func TestDingQueue(t *testing.T) {
 
 	time.Sleep(time.Second * 10)
 }
+
+func TestCalcSing(t *testing.T) {
+	fmt.Println(calcSign(time.Now().UnixNano()/1000/1000, "abc"))
+}
