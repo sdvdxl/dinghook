@@ -74,6 +74,18 @@ type IndependentActionCardButton struct {
 	ButtonURL   string `json:"actionURL" validate:"required"` // 点击按钮跳转url
 }
 
+// FeedCard FeedCard类型
+type FeedCard struct {
+	Links []FeedCardLink
+}
+
+// FeedCardLink feedCard 链接
+type FeedCardLink struct {
+	Title      string `json:"title"  validate:"required"`
+	ContentURL string `json:"messageUrl" validate:"required"` // 点击消息跳转的URL 必填
+	PictureURL string `json:"picUrl"`                         // 图片 url
+}
+
 // SimpleMessage push message
 type SimpleMessage struct {
 	Content string

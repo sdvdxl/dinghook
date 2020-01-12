@@ -246,6 +246,10 @@ func (ding Ding) Send(message interface{}) Result {
 		paramsMap = convertIndependentActionCard(m)
 	} else if m, ok := message.(*IndependentActionCard); ok {
 		paramsMap = convertIndependentActionCard(*m)
+	} else if m, ok := message.(FeedCard); ok {
+		paramsMap = convertFeedCard(m)
+	} else if m, ok := message.(*FeedCard); ok {
+		paramsMap = convertFeedCard(*m)
 	} else {
 		return Result{ErrMsg: "not support message type"}
 	}
@@ -322,6 +326,20 @@ func convertIndependentActionCard(m IndependentActionCard) map[string]interface{
 	paramsMap["actionCard"] = map[string]interface{}{"text": m.Content, "title": m.Title,
 		"btns":           btns,
 		"btnOrientation": btnOrientation, "hideAvatar": hideAvatar}
+	return paramsMap
+}
+
+func convertFeedCard(m FeedCard) map[string]interface{} {
+	var paramsMap = make(map[string]interface{})
+	paramsMap["msgtype"] = "feedCard"
+
+	links := make([]map[string]interface{}, 0, len(m.Links))
+
+	for _, v := range m.Links {
+		links = append(links, map[string]interface{}{"title": v.Title, "messageURL": v.ContentURL, "picURL": v.PictureURL})
+	}
+
+	paramsMap["feedCard"] = map[string]interface{}{"links": links}
 	return paramsMap
 }
 
