@@ -271,7 +271,7 @@ func convertMessage(m Message) map[string]interface{} {
 	var paramsMap = make(map[string]interface{})
 	paramsMap["msgtype"] = "text"
 	paramsMap["text"] = map[string]string{"content": m.Content}
-	paramsMap["at"] = map[string]interface{}{"atMobiles": m.AtPersion, "isAtAll": m.AtAll}
+	paramsMap["at"] = map[string]interface{}{"atMobiles": m.AtData.AtMobiles,"atUserIds":m.AtData, "isAtAll": m.AtData}
 	return paramsMap
 }
 
@@ -293,24 +293,20 @@ func convertOverallActionCard(m OverallActionCard) map[string]interface{} {
 	var paramsMap = make(map[string]interface{})
 	paramsMap["msgtype"] = "actionCard"
 
-	hideAvatar := "0"
-	if m.HideAvatar {
-		hideAvatar = "1"
+	btnOrientation := "0"
+	if m.ButtonHorizontal {
+		btnOrientation = "1"
 	}
+
 	paramsMap["actionCard"] = map[string]string{"text": m.Content, "title": m.Title,
 		"singleTitle": m.ButtonTitle, "singleURL": m.ButtonURL,
-		"btnOrientation": "0", "hideAvatar": hideAvatar}
+		"btnOrientation": btnOrientation}
 	return paramsMap
 }
 
 func convertIndependentActionCard(m IndependentActionCard) map[string]interface{} {
 	var paramsMap = make(map[string]interface{})
 	paramsMap["msgtype"] = "actionCard"
-
-	hideAvatar := "0"
-	if m.HideAvatar {
-		hideAvatar = "1"
-	}
 
 	btnOrientation := "0"
 	if m.ButtonHorizontal {
@@ -325,7 +321,7 @@ func convertIndependentActionCard(m IndependentActionCard) map[string]interface{
 
 	paramsMap["actionCard"] = map[string]interface{}{"text": m.Content, "title": m.Title,
 		"btns":           btns,
-		"btnOrientation": btnOrientation, "hideAvatar": hideAvatar}
+		"btnOrientation": btnOrientation}
 	return paramsMap
 }
 

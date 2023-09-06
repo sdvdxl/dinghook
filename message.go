@@ -29,11 +29,17 @@ const (
 	MsgTypeActionCard = "actionCard"
 )
 
+// At 结构
+type At struct {
+	AtMobiles []string
+	AtUserIds []string
+	AtAll     bool
+}
+
 // Message 普通消息
 type Message struct {
 	Content   string `validate:"required"`
-	AtPersion []string
-	AtAll     bool
+	AtData At
 }
 
 // Link 链接消息
@@ -54,7 +60,7 @@ type Markdown struct {
 type OverallActionCard struct {
 	Content     string `json:"text" validate:"required"`        // 要发送的消息， 必填
 	Title       string `json:"title" validate:"required"`       // 标题， 必填
-	HideAvatar  bool   `json:"hideAvatar"`                      // false-正常发消息者头像，true-隐藏发消息者头像
+	ButtonHorizontal bool                          `json:"btnOrientation"`            //false-按钮竖直排列，true-按钮横向排列
 	ButtonTitle string `json:"singleTitle" validate:"required"` // 单个按钮的文案
 	ButtonURL   string `json:"singleURL" validate:"required"`   // 点击按钮跳转url
 }
@@ -63,7 +69,6 @@ type OverallActionCard struct {
 type IndependentActionCard struct {
 	Content          string                        `json:"text" validate:"required"`  // 要发送的消息， 必填
 	Title            string                        `json:"title" validate:"required"` // 标题， 必填
-	HideAvatar       bool                          `json:"hideAvatar"`                // false-正常发消息者头像，true-隐藏发消息者头像
 	ButtonHorizontal bool                          `json:"btnOrientation"`            //false-按钮竖直排列，true-按钮横向排列
 	Btns             []IndependentActionCardButton `json:"btns" validate:"required"`
 }
